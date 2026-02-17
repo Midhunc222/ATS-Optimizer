@@ -13,15 +13,16 @@ if (typeof DOMMatrix === "undefined") {
 const pdfParse = require("pdf-parse");
 
 // Debug logging to inspect what pdf-parse exports
-const fs = require('fs');
-try {
-    fs.appendFileSync('debug.log', `[DEBUG] pdfParse imported type: ${typeof pdfParse}\n`);
-    if (typeof pdfParse === 'object') {
-        fs.appendFileSync('debug.log', `[DEBUG] pdfParse keys: ${Object.keys(pdfParse)}\n`);
-    }
-} catch (e) {
-    console.error("Failed to write to debug.log", e);
-}
+// Debug logging to inspect what pdf-parse exports
+// const fs = require('fs');
+// try {
+//     fs.appendFileSync('debug.log', `[DEBUG] pdfParse imported type: ${typeof pdfParse}\n`);
+//     if (typeof pdfParse === 'object') {
+//         fs.appendFileSync('debug.log', `[DEBUG] pdfParse keys: ${Object.keys(pdfParse)}\n`);
+//     }
+// } catch (e) {
+//     console.error("Failed to write to debug.log", e);
+// }
 
 export async function parseResume(file: Buffer): Promise<string> {
     try {
@@ -51,10 +52,6 @@ export async function parseResume(file: Buffer): Promise<string> {
 
         return text;
     } catch (error) {
-        const fs = require('fs');
-        const logMessage = `Date: ${new Date().toISOString()}\nError Parsing PDF: ${error instanceof Error ? error.message : String(error)}\nStack: ${error instanceof Error ? error.stack : 'No stack'}\n\n`;
-        try { fs.appendFileSync('debug.log', logMessage); } catch (e) { console.error("Failed to write to debug.log", e); }
-
         console.error("Error parsing PDF:", error);
         throw error;
     }

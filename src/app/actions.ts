@@ -78,21 +78,13 @@ export async function analyzeResumeAction(formData: FormData): Promise<{ success
         }
 
     } catch (error: any) {
-        const fs = require('fs');
-        const logMessage = `Date: ${new Date().toISOString()}\nError: ${error instanceof Error ? error.message : String(error)}\nStack: ${error instanceof Error ? error.stack : 'No stack'}\n\n`;
-        try { fs.appendFileSync('debug.log', logMessage); } catch (e) { console.error("Failed to write to debug.log", e); }
-
         console.error("Analysis error details:", error);
 
-        let errorMessage = "An unexpected error occurred during analysis. Check server logs for details.";
-
-        // Handle GoogleGenerativeAI Error specifically if possible, or string matching
-        if (error.message?.includes("429") || error.message?.includes("Too Many Requests") || error.message?.includes("Quota exceeded")) {
-            errorMessage = "API Rate Limit Exceeded. Please wait a minute and try again.";
-        } else if (error.message?.includes("404") || error.message?.includes("not found")) {
-            errorMessage = "AI Model not found or API key invalid for this model. Please check configuration.";
-        }
-
-        return { success: false, error: errorMessage };
+        // Return the actual error message for debugging purposes
+        // In production, you might want to sanitize this, but for now we need to see what's wrong.
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
     }
 }

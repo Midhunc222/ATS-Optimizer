@@ -1,58 +1,34 @@
-// Polyfill DOMMatrix for Node.js environment as pdf-parse dependency (pdf.js) requires it
-if (typeof DOMMatrix === "undefined") {
-    // @ts-ignore
-    global.DOMMatrix = class DOMMatrix {
-        a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
-        constructor() { }
-        multiply() { return this; }
-        translate() { return this; }
-        scale() { return this; }
-    };
-}
-
-const pdfParse = require("pdf-parse");
-
-// Debug logging to inspect what pdf-parse exports
-// Debug logging to inspect what pdf-parse exports
-// const fs = require('fs');
-// try {
-//     fs.appendFileSync('debug.log', `[DEBUG] pdfParse imported type: ${typeof pdfParse}\n`);
-//     if (typeof pdfParse === 'object') {
-//         fs.appendFileSync('debug.log', `[DEBUG] pdfParse keys: ${Object.keys(pdfParse)}\n`);
-//     }
-// } catch (e) {
-//     console.error("Failed to write to debug.log", e);
-// }
+// Use legacy build for Node.js compatibility without canvas/worker issues
+const pdfjs = require("pdfjs-dist/legacy/build/pdf.js");
 
 export async function parseResume(file: Buffer): Promise<string> {
     try {
-        // Handle both v1 (function) and v2 (class) styles, and default export
-        let text = "";
+        // Convert Buffer to Uint8Array as expected by PDF.js
+        const data = new Uint8Array(file);
 
-        // Check if it's a function (v1 style or default export)
-        if (typeof pdfParse === "function") {
-            const data = await pdfParse(file);
-            text = data.text;
-        }
-        // Check if .default is the function
-        else if (pdfParse.default && typeof pdfParse.default === "function") {
-            const data = await pdfParse.default(file);
-            text = data.text;
-        }
-        // Check if PDFParse class exists (v2 style)
-        else if (pdfParse.PDFParse) {
-            const parser = new pdfParse.PDFParse({ data: file });
-            const data = await parser.getText();
-            await parser.destroy();
-            text = data.text;
-        }
-        else {
-            throw new Error(`Unknown pdf-parse export: ${typeof pdfParse}`);
+        // Load the PDF document
+        const loadingTask = pdfjs.getDocument({ data });
+        const pdfDocument = await loadingTask.promise;
+
+        let fullText = "";
+
+        // Iterate through each page to extract text
+        for (let i = 1; i <= pdfDocument.numPages; i++) {
+            const page = await pdfDocument.getPage(i);
+            const textContent = await page.getTextContent();
+
+            // Extract text items and join them
+            const pageText = textContent.items
+                .map((item: any) => item.str)
+                .join(" ");
+
+            fullText += pageText + "\n";
         }
 
-        return text;
+        return fullText;
+
     } catch (error) {
-        console.error("Error parsing PDF:", error);
+        console.error("Error parsing PDF with pdfjs-dist:", error);
         throw error;
     }
 }
